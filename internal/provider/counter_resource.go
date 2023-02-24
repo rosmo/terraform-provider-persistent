@@ -115,7 +115,11 @@ func (r *PersistentCounterResource) Create(ctx context.Context, req resource.Cre
 		values := make(map[string]int64, keysLength)
 		currentValue := data.InitialValue.ValueInt64()
 		for i := 0; i < keysLength; i++ {
-			keyValue := keys[i].(types.String).ValueString()
+			_keyValue, ok := keys[i].(types.String)
+			if !ok {
+				continue
+			}
+			keyValue := _keyValue.ValueString()
 			values[keyValue] = currentValue
 			currentValue += 1
 		}
@@ -165,9 +169,17 @@ func (r *PersistentCounterResource) Update(ctx context.Context, req resource.Upd
 
 		stateValues := state.Values.Elements()
 		for _, key := range keys {
-			keyValue := key.(types.String).ValueString()
-			if val, ok := stateValues[keyValue]; ok {
-				values[keyValue] = val.(types.Int64).ValueInt64()
+			_keyValue, ok := key.(types.String)
+			if !ok {
+				continue
+			}
+			keyValue := _keyValue.ValueString()
+			if val, found := stateValues[keyValue]; found {
+				_intValue, ok := val.(types.Int64)
+				if !ok {
+					continue
+				}
+				values[keyValue] = _intValue.ValueInt64()
 			} else {
 				lastValue += 1
 				values[keyValue] = lastValue
