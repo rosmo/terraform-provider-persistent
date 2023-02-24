@@ -1,15 +1,11 @@
 terraform {
   required_providers {
-    persistent-counter = {
-      source  = "rosmo/persistent-counter"
-      version = "0.1.0"
+    persistent = {
+      source = "rosmo/persistent"
     }
   }
 }
 
-provider "persistent-counter" {
-}
-
-resource "persistent_counter_values" "example" {
+resource "persistent_counter" "example" {
   keys = ["a", "b", "d"]
 }

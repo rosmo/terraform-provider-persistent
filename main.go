@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/rosmo/terraform-provider-persistent-counter/internal/provider"
+	"github.com/rosmo/terraform-provider-persistent/internal/provider"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -32,7 +32,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/rosmo/persistent-counter",
+		Address: "registry.terraform.io/rosmo/persistent",
 		Debug:   debug,
 	}
 

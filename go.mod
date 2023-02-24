@@ -1,4 +1,4 @@
-module github.com/rosmo/terraform-provider-persistent-counter
+module github.com/rosmo/terraform-provider-persistent
 
 go 1.18
 

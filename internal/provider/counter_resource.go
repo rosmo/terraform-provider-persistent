@@ -34,7 +34,7 @@ type PersistentCounterResourceModel struct {
 }
 
 func (r *PersistentCounterResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = "persistent_counter_values"
+	resp.TypeName = "persistent_counter"
 }
 
 func (r *PersistentCounterResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {

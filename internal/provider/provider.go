@@ -23,7 +23,7 @@ type PersistentCounterProviderModel struct {
 }
 
 func (p *PersistentCounterProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "persistent-counter"
+	resp.TypeName = "persistent"
 	resp.Version = p.version
 }
 

@@ -1,11 +1,11 @@
 # Persistent Counter provider for Terraform
 
 ```
-resource "persistent_counter_values" "example" {
+resource "persistent_counter" "example" {
   keys     = ["a", "b", "c"]
 }
 
-persistent_counter.example.values = { a = 0, b = 1, c = 1}
+persistentcounter_values.example.values = { a = 0, b = 1, c = 1}
 ```
 
 ## Requirements
