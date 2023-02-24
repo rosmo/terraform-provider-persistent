@@ -1,4 +1,4 @@
-module github.com/hashicorp/terraform-provider-scaffolding-framework
+module github.com/rosmo/terraform-provider-persistent-counter
 
 go 1.18
 
