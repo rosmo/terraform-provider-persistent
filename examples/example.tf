@@ -10,7 +10,6 @@ terraform {
 provider "persistent-counter" {
 }
 
-resource "persistent_counter" "example" {
-  provider = persistent-counter
-  keys     = ["a", "b", "d"]
+resource "persistent_counter_values" "example" {
+  keys = ["a", "b", "d"]
 }
