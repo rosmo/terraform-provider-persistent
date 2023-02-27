@@ -1,12 +1,23 @@
 # Persistent Counter provider for Terraform
 
 ```
+terraform {
+  required_providers {
+    persistent = {
+      source = "rosmo/persistent"
+    }
+  }
+}
+
 resource "persistent_counter" "example" {
   keys     = ["a", "b", "c"]
 }
 
-persistentcounter_values.example.values = { a = 0, b = 1, c = 1}
+# Result would be:
+#   persistent_counter.example.values = { a = 0, b = 1, c = 1 }
 ```
+
+The provider is available from Terraform registry: [registry.terraform.io/providers/rosmo/persistent/latest](https://registry.terraform.io/providers/rosmo/persistent/latest)
 
 ## Requirements
 
