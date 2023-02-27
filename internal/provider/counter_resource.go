@@ -39,18 +39,23 @@ func (r *PersistentCounterResource) Metadata(ctx context.Context, req resource.M
 
 func (r *PersistentCounterResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Persistent counter",
+		MarkdownDescription: `
+			Persistent counter. Generates sequentially increasing number counters for the strings specified 
+			in the ` + "`keys`" + ` variable. As long as a specified key exist, it will always receive the same counter
+			value. No counter value is re-used even if a new key is added and counter values will only ever
+			increase.
+		`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "Identifier",
+				Computed:    true,
+				Description: "Identifier (always fixed)",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"keys": schema.ListAttribute{
+				Description: "List of keys to generate counters for.",
 				ElementType: types.StringType,
 				Required:    true,
 			},
@@ -71,7 +76,7 @@ func (r *PersistentCounterResource) Schema(ctx context.Context, req resource.Sch
 				ElementType: types.Int64Type,
 				Optional:    true,
 				Computed:    true,
-				Description: "A map of strings that will cause a change to the counter when any of the values change.",
+				Description: "A map of keys to counter values.",
 			},
 		},
 	}

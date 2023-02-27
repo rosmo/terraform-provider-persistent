@@ -3,12 +3,18 @@
 page_title: "persistent_counter Resource - terraform-provider-persistent"
 subcategory: ""
 description: |-
-  Persistent counter
+  Persistent counter. Generates sequentially increasing number counters for the strings specified 
+          in the `keys` variable. As long as a specified key exist, it will always receive the same counter
+          value. No counter value is re-used even if a new key is added and counter values will only ever
+          increase.
 ---
 
 # persistent_counter (Resource)
 
-Persistent counter
+Persistent counter. Generates sequentially increasing number counters for the strings specified 
+			in the `keys` variable. As long as a specified key exist, it will always receive the same counter
+			value. No counter value is re-used even if a new key is added and counter values will only ever
+			increase.
 
 
 
@@ -17,16 +23,16 @@ Persistent counter
 
 ### Required
 
-- `keys` (List of String)
+- `keys` (List of String) List of keys to generate counters for.
 
 ### Optional
 
 - `initial_value` (Number) The initial value to use for the counter.
-- `values` (Map of Number) A map of strings that will cause a change to the counter when any of the values change.
+- `values` (Map of Number) A map of keys to counter values.
 
 ### Read-Only
 
-- `id` (String) Identifier
+- `id` (String) Identifier (always fixed)
 - `last_value` (Number) The last value that was used for the counter.
 
 

@@ -44,6 +44,17 @@ func TestAccPersistentCounterResource(t *testing.T) {
 					resource.TestCheckResourceAttr("persistent_counter.test", "values.e", "4"),
 				),
 			},
+			{
+				Config: testAccCounterInitialResourceConfig(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("persistent_counter.initial-value", "initial_value", "5"),
+					resource.TestCheckResourceAttr("persistent_counter.initial-value", "last_value", "8"),
+					resource.TestCheckResourceAttr("persistent_counter.initial-value", "values.a", "5"),
+					resource.TestCheckResourceAttr("persistent_counter.initial-value", "values.b", "6"),
+					resource.TestCheckResourceAttr("persistent_counter.initial-value", "values.c", "7"),
+					resource.TestCheckResourceAttr("persistent_counter.initial-value", "values.d", "8"),
+				),
+			},
 		},
 	})
 }
@@ -71,6 +82,15 @@ func testAccCounterUpdateResourceConfig() string {
 resource "persistent_counter" "test" {
   initial_value = 0
   keys          = ["a", "b", "d", "e"]
+}
+`
+}
+
+func testAccCounterInitialResourceConfig() string {
+	return `
+resource "persistent_counter" "initial-value" {
+  initial_value = 5
+  keys          = ["a", "b", "c", "d"]
 }
 `
 }
