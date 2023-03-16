@@ -14,7 +14,16 @@ resource "persistent_counter" "example" {
 }
 
 # Result would be:
-#   persistent_counter.example.values = { a = 0, b = 1, c = 1 }
+#   persistent_counter.example.values = { a = 0, b = 1, c = 2 }
+
+# Changing the keys:
+resource "persistent_counter" "example" {
+  keys     = ["a", "b", "d", "c"]
+}
+
+# New result would be:
+#   persistent_counter.example.values = { a = 0, b = 1, d = 3, c = 2 }
+
 ```
 
 The provider is available from Terraform registry: [registry.terraform.io/providers/rosmo/persistent/latest](https://registry.terraform.io/providers/rosmo/persistent/latest)
