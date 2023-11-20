@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -28,6 +29,7 @@ type PersistentCounterResource struct {
 type PersistentCounterResourceModel struct {
 	Id           types.String `tfsdk:"id"`
 	Keys         types.List   `tfsdk:"keys"`
+	Reuse        types.Bool   `tfsdk:"reuse"`
 	InitialValue types.Int64  `tfsdk:"initial_value"`
 	LastValue    types.Int64  `tfsdk:"last_value"`
 	Values       types.Map    `tfsdk:"values"`
@@ -58,6 +60,10 @@ func (r *PersistentCounterResource) Schema(ctx context.Context, req resource.Sch
 				Description: "List of keys to generate counters for.",
 				ElementType: types.StringType,
 				Required:    true,
+			},
+			"reuse": schema.BoolAttribute{
+				Description: "Allows reusing freed keys for new ones.",
+				Optional:    true,
 			},
 			"initial_value": schema.Int64Attribute{
 				Optional:    true,
@@ -115,21 +121,16 @@ func (r *PersistentCounterResource) Create(ctx context.Context, req resource.Cre
 
 	// Generate new set of keys
 	if data.Values.IsUnknown() {
-		keys := data.Keys.Elements()
-		keysLength := len(keys)
-		values := make(map[string]int64, keysLength)
-		currentValue := data.InitialValue.ValueInt64()
-		for i := 0; i < keysLength; i++ {
-			_keyValue, ok := keys[i].(types.String)
-			if !ok {
-				continue
-			}
-			keyValue := _keyValue.ValueString()
-			values[keyValue] = currentValue
-			currentValue += 1
-		}
-		data.LastValue = types.Int64Value(currentValue - 1)
+		keys := convertKeys(data.Keys.Elements())
+		last, values := assignKeys(
+			keys, nil, data.Reuse.ValueBool(),
+			// initial value
+			data.InitialValue.ValueInt64(),
+			// use initial value - 1 for last value
+			data.InitialValue.ValueInt64()-1,
+		)
 
+		data.LastValue = types.Int64Value(last)
 		_values, diags := types.MapValueFrom(ctx, types.Int64Type, values)
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
@@ -165,33 +166,20 @@ func (r *PersistentCounterResource) Update(ctx context.Context, req resource.Upd
 		return
 	}
 
-	if !data.Keys.Equal(state.Keys) {
-		lastValue := state.LastValue.ValueInt64()
+	if !data.Keys.Equal(state.Keys) || !data.InitialValue.Equal(state.Keys) {
 
-		keys := data.Keys.Elements()
-		keysLength := len(keys)
-		values := make(map[string]int64, keysLength)
+		keys := convertKeys(data.Keys.Elements())
+		stateVals := convertState(state.Values.Elements())
 
-		stateValues := state.Values.Elements()
-		for _, key := range keys {
-			_keyValue, ok := key.(types.String)
-			if !ok {
-				continue
-			}
-			keyValue := _keyValue.ValueString()
-			if val, found := stateValues[keyValue]; found {
-				_intValue, ok := val.(types.Int64)
-				if !ok {
-					continue
-				}
-				values[keyValue] = _intValue.ValueInt64()
-			} else {
-				lastValue += 1
-				values[keyValue] = lastValue
-			}
-		}
-		data.LastValue = types.Int64Value(lastValue)
+		last, values := assignKeys(
+			keys, stateVals, data.Reuse.ValueBool(),
+			data.InitialValue.ValueInt64(),
+			state.LastValue.ValueInt64(),
+		)
+
+		data.LastValue = types.Int64Value(last)
 		state.LastValue = data.LastValue
+
 		_values, diags := types.MapValueFrom(ctx, types.Int64Type, values)
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
@@ -225,4 +213,37 @@ func (r *PersistentCounterResource) Delete(ctx context.Context, req resource.Del
 
 func (r *PersistentCounterResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+// convertKeys generates a string slice from the terraform string list representation
+func convertKeys(tfKeys []attr.Value) []string {
+	keys := make([]string, 0, len(tfKeys))
+	for _, k := range tfKeys {
+		val, ok := k.(types.String)
+		if !ok {
+			// conversion failed
+			continue
+		}
+		str := val.ValueString()
+		if str == "" {
+			// invalid string value or string empty
+			continue
+		}
+		keys = append(keys, str)
+
+	}
+	return keys
+}
+
+// convertState converts the counter state from terraform format to map[string]int64
+func convertState(tfState map[string]attr.Value) map[string]int64 {
+	state := make(map[string]int64, len(tfState))
+	for k, v := range tfState {
+		intVal, ok := v.(types.Int64)
+		if !ok {
+			continue
+		}
+		state[k] = intVal.ValueInt64()
+	}
+	return state
 }
