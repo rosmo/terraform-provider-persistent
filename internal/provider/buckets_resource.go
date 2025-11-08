@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"sort"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -72,7 +74,9 @@ type PersistentBucketsResourceModel struct {
 	Items          types.Map    `tfsdk:"items"`
 	MaximumBuckets types.Int64  `tfsdk:"maximum_buckets"`
 	BucketCapacity types.Int64  `tfsdk:"bucket_capacity"`
-	Buckets        types.Set    `tfsdk:"buckets"`
+	TargetCapacity types.Int64  `tfsdk:"target_capacity"`
+	MoveItems      types.Bool   `tfsdk:"move_items"`
+	Buckets        types.List   `tfsdk:"buckets"`
 }
 
 func (r *PersistentBucketsResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -135,13 +139,26 @@ func (r *PersistentBucketsResource) Schema(ctx context.Context, req resource.Sch
 					int64planmodifier.RequiresReplace(),
 				},
 			},
-			"buckets": schema.SetAttribute{
+			"target_capacity": schema.Int64Attribute{
+				Optional:    true,
+				Description: "Target capacity of a single bucket (fills bucket up to this capacity, allows room for items growing weight without needing to move).",
+				Validators: []validator.Int64{
+					int64validator.AtLeast(1),
+				},
+			},
+			"move_items": schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(true),
+				Description: "Allows moving items from one bucket to another (when weight of an item changes). If set to false, causes an error if an item needs moving.",
+			},
+			"buckets": schema.ListAttribute{
 				ElementType: types.MapType{
 					ElemType: itemObjectType,
 				},
 				Optional:    true,
 				Computed:    true,
-				Description: "Set of filled buckets.",
+				Description: "Ordered list of filled buckets.",
 			},
 		},
 	}
@@ -189,7 +206,7 @@ func findCapacity(capacities *[]int64, weight int64, maxCapacity int64) *int {
 }
 
 func workTheBuckets(data, state *PersistentBucketsResourceModel, diagnostics *diag.Diagnostics) {
-	data.Buckets = basetypes.NewSetNull(bucketsType)
+	data.Buckets = basetypes.NewListNull(bucketsType)
 	capacities := make([]int64, data.MaximumBuckets.ValueInt64())
 	allBuckets := make([]map[string]BucketItem, data.MaximumBuckets.ValueInt64())
 	for idx := 0; idx < int(data.MaximumBuckets.ValueInt64()); idx++ {
@@ -197,6 +214,13 @@ func workTheBuckets(data, state *PersistentBucketsResourceModel, diagnostics *di
 		capacities[idx] = 0
 	}
 	bucketCapacity := data.BucketCapacity.ValueInt64()
+	targetCapacity := bucketCapacity
+	if !data.BucketCapacity.IsUnknown() && !data.BucketCapacity.IsNull() {
+		if data.TargetCapacity.ValueInt64() > 0 {
+			targetCapacity = data.TargetCapacity.ValueInt64()
+		}
+	}
+
 	keysInBuckets := make(map[string]int, 0)
 
 	// Fill buckets from TF data
@@ -251,6 +275,10 @@ func workTheBuckets(data, state *PersistentBucketsResourceModel, diagnostics *di
 						diagnostics.AddError(fmt.Sprintf("unable to find bucket capacity for: %s (previous weight %d, new weight %d)", k, previousWeight, newWeight), fmt.Sprintf("bucket capacities: %+v", capacities))
 						return
 					}
+					if !data.MoveItems.ValueBool() {
+						diagnostics.AddError(fmt.Sprintf("unable to find bucket capacity for moving item: %s (previous weight %d, new weight %d)", k, previousWeight, newWeight), fmt.Sprintf("bucket capacities: %+v", capacities))
+						return
+					}
 					delete(allBuckets[keyInBucket], k)
 					keysInBuckets[k] = *newBucket
 					allBuckets[*newBucket][k] = newItem
@@ -273,9 +301,17 @@ func workTheBuckets(data, state *PersistentBucketsResourceModel, diagnostics *di
 		}
 	}
 
+	// Sort keys to make more predictable results
+	newItemsKeys := make([]string, 0)
+	for k := range newItems {
+		newItemsKeys = append(newItemsKeys, k)
+	}
+	sort.Strings(newItemsKeys)
+
 	// Add new items in buckets with capacity
-	for k, v := range newItems {
-		targetBucket := findCapacity(&capacities, v.Weight, bucketCapacity)
+	for _, k := range newItemsKeys {
+		v := newItems[k]
+		targetBucket := findCapacity(&capacities, v.Weight, targetCapacity)
 		if targetBucket == nil {
 			diagnostics.AddError(fmt.Sprintf("unable to find bucket capacity for: %s (weight %d)", k, v.Weight), fmt.Sprintf("bucket capacities: %+v", capacities))
 			return
@@ -306,7 +342,7 @@ func workTheBuckets(data, state *PersistentBucketsResourceModel, diagnostics *di
 	}
 
 	// Set output value
-	bucketsValue, diags := types.SetValue(bucketsType, tfBuckets)
+	bucketsValue, diags := types.ListValue(bucketsType, tfBuckets)
 	if diags.HasError() {
 		diagnostics.AddError("failed to create buckets map for output", "")
 		return

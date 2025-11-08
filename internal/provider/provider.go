@@ -29,7 +29,7 @@ func (p *PersistentCounterProvider) Metadata(ctx context.Context, req provider.M
 
 func (p *PersistentCounterProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Persistent resource counters provider for Terraform. Currently implements sequential numerical counter and buckets with capacity.",
+		Description: "Persistent resources provider for Terraform. Currently implements sequential numerical counter and buckets with capacity.",
 		Attributes:  map[string]schema.Attribute{},
 	}
 }
