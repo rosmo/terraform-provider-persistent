@@ -82,7 +82,9 @@ resource "persistent_buckets" "example" {
 
 ### Optional
 
-- `buckets` (Set of Map of Object) Set of filled buckets.
+- `buckets` (List of Map of Object) Ordered list of filled buckets.
+- `move_items` (Boolean) Allows moving items from one bucket to another (when weight of an item changes). If set to false, causes an error if an item needs moving.
+- `target_capacity` (Number) Target capacity of a single bucket (fills bucket up to this capacity, allows room for items growing weight without needing to move).
 
 ### Read-Only
 
