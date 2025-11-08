@@ -3,12 +3,12 @@
 page_title: "persistent Provider"
 subcategory: ""
 description: |-
-  
+  Persistent resource counters provider for Terraform. Currently implements sequential numerical counters.
 ---
 
 # persistent Provider
 
-
+Persistent resource counters provider for Terraform. Currently implements sequential numerical counters.
 
 
 

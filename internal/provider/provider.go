@@ -55,6 +55,7 @@ func (p *PersistentCounterProvider) Configure(ctx context.Context, req provider.
 func (p *PersistentCounterProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewPersistentCounterResource,
+		NewPersistentBucketsResource,
 	}
 }
 
