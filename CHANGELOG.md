@@ -1,3 +1,7 @@
+## 0.3.2 (Released)
+
+Maintenance release with updated dependencies.
+
 ## 0.3.1 (Released)
 
 BUG FIXES: Changed set to list for proper ordering.
