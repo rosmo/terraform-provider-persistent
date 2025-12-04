@@ -4,9 +4,9 @@ page_title: "persistent_counter Resource - terraform-provider-persistent"
 subcategory: ""
 description: |-
   Persistent counter. Generates sequentially increasing number counters for the strings specified 
-          in the `keys` variable. As long as a specified key exist, it will always receive the same counter
-          value. No counter value is re-used even if a new key is added and counter values will only ever
-          increase.
+  		in the `keys` variable. As long as a specified key exist, it will always receive the same counter
+  		value. No counter value is re-used even if a new key is added and counter values will only ever
+  		increase.
 ---
 
 # persistent_counter (Resource)

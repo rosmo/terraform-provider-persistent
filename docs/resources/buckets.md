@@ -4,10 +4,10 @@ page_title: "persistent_buckets Resource - terraform-provider-persistent"
 subcategory: ""
 description: |-
   Persistent buckets. Provisions a number of buckets (lists) containing resources
-          defined according to bucket capacity and item size. Once a bucket's capacity
-          is exhausted, new buckets are created up until `maximum_buckets`. If items are
-          removed, they are also removed from buckets and new items may be placed in 
-          the freed space. If maximum buckets are reached, an error is raised.
+  		defined according to bucket capacity and item size. Once a bucket's capacity
+  		is exhausted, new buckets are created up until `maximum_buckets`. If items are
+  		removed, they are also removed from buckets and new items may be placed in 
+  		the freed space. If maximum buckets are reached, an error is raised.
 ---
 
 # persistent_buckets (Resource)
@@ -82,7 +82,9 @@ resource "persistent_buckets" "example" {
 
 ### Optional
 
-- `buckets` (Set of Map of Object) Set of filled buckets.
+- `buckets` (List of Map of Object) Ordered list of filled buckets.
+- `move_items` (Boolean) Allows moving items from one bucket to another (when weight of an item changes). If set to false, causes an error if an item needs moving.
+- `target_capacity` (Number) Target capacity of a single bucket (fills bucket up to this capacity, allows room for items growing weight without needing to move).
 
 ### Read-Only
 
